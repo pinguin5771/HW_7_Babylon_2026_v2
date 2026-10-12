@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="PrinterLibrary/PrinterLibrary.csproj" />
+  <Project Path="SharedInterfaces/SharedInterfaces.csproj" />
+  <Project Path="WinFormsApp_Babylon_2026_v2/WinFormsApp_Babylon_2026_v2.csproj" />
+</Solution>
