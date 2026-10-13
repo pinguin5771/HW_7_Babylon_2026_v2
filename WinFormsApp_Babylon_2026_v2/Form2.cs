@@ -30,7 +30,7 @@ namespace WinFormsApp_Babylon_2026_v2
 
         private void buttonLoadScripts_Click(object sender, EventArgs e)
         {
-        LoadAncientScripts();
+            LoadAncientScripts();
         }
 
         private void Scan()
@@ -65,6 +65,10 @@ namespace WinFormsApp_Babylon_2026_v2
                     {
                         scripts.Add(knownScript);
                     }
+                    else if(type.FullName.Contains("KlingonData"))
+                    {
+                        scripts.Add(new KlingonAdapter(instance));
+                    }
                     else
                     {
                         Debug.WriteLine("Does not supports IAncientScript: " + type.FullName);
@@ -76,8 +80,34 @@ namespace WinFormsApp_Babylon_2026_v2
                 }
             }
 
-            IAncientScript ancientScript1 = scripts[0];
-            string origin = ancientScript1.GetOrigin();
+            IAncientScript ancientScript = scripts[1];
+            string origin = ancientScript.GetOrigin();
+            string text = ancientScript.Translate("Text to translate");
+            Image image = ancientScript.GetEmblem();
+
+            foreach(IAncientScript script in scripts)
+            {
+                try
+                {
+                    listBoxScripts.Items.Add($"Origin: {script.GetOrigin()}");
+                    listBoxScripts.Items.Add($"Translation: {script.Translate("HELLO!")}");
+
+                    Image emblem = script.GetEmblem();
+
+                    listBoxScripts.Items.Add($"Emblem available: " +
+                        $"{(emblem != null ? "Yes" : "No")}");
+
+                    listBoxScripts.Items.Add("--------------------------------");
+                }
+                catch (Exception ex)
+                {
+                    listBoxScripts.Items.Add($"Error testing script: {ex.Message}");
+                }
+            }
+            if (scripts.Count == 0)
+            {
+                listBoxScripts.Items.Add("No scripts loaded.");
+            }
         }
     }
 
@@ -93,10 +123,11 @@ namespace WinFormsApp_Babylon_2026_v2
         private readonly object droid;
         private readonly MethodInfo method;
 
+
         public MaintenanceDroidAdapter(object droid)
         {
             this.droid = droid;
-            method = droid.GetType().GetMethod();
+            method = droid.GetType().GetMethod("GetSystemLogs");
         }
 
         public Image GetEmblem() => null;
@@ -105,7 +136,15 @@ namespace WinFormsApp_Babylon_2026_v2
 
         public string Translate(string rawData)
         {
-            throw new NotImplementedException();
+            if(method != null)
+            {
+                object[] parameters = new object[] { rawData, null };
+                method.Invoke(droid, parameters);
+                string translationResult = parameters[1]?.ToString() ?? "Error";
+
+                return translationResult;
+            }
+            return string.Empty;
         }
     }
 
@@ -185,6 +224,38 @@ namespace WinFormsApp_Babylon_2026_v2
             {
                 int voltage = item.GetVoltage();
             }
+        }
+    }
+
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    public class KlingonAdapter : IAncientScript
+    {
+        private readonly object klingon;
+        private readonly MethodInfo decodeMethod;
+        private readonly MethodInfo insigniaMethod;
+
+        public KlingonAdapter(object klingon)
+        {
+            this.klingon = klingon;
+            Type type = klingon.GetType();
+            decodeMethod = type.GetMethod("DecodeWarriorCry");
+            insigniaMethod = type.GetMethod("GetWarriorInsignia");
+        }
+
+        public string GetOrigin()
+        {
+            return "Klingon Warrior";
+        }
+
+        public string Translate(string rawData)
+        {
+            return decodeMethod.Invoke(klingon, 
+                new object[] {rawData})?.ToString() ?? string.Empty;
+        }
+
+        public Image GetEmblem()
+        {
+            return insigniaMethod.Invoke(klingon, null) as Image;
         }
     }
 
